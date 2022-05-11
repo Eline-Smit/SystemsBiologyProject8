@@ -1,0 +1,36 @@
+---
+title: "Exercise1"
+author: "Eline Smit"
+date: "5/10/2022"
+output: pdf_document
+---
+
+1. de toegevoegde hoeveelheid en het percentage wat verloren gaat per T.
+2. 
+3. 
+4. een list met elke value voor dR binnen de timeframe
+
+
+
+```{r}
+library(deSolve)
+
+state <- c(rna = 90)
+timeframe <- seq(0, 100, by = 1)
+dynamis <- function(t,y,parms){
+  with(as.list(c(parms)),{
+    dR <- addvol - perc * (y+addvol)
+    return(list(c(dR)))
+  }
+  )
+}
+param <- c(addvol = 10, perc = 0.1)
+out  <- ode(times = timeframe, y = state,   parms = param, func = dynamis, method = "euler")
+param <- c(addvol = 11, perc = 0.1)
+out2 <- ode(times = timeframe, y = state,   parms = param, func = dynamis, method = "euler")
+param <- c(addvol = 9, perc = 0.1)
+out3 <- ode(times = timeframe, y = state,   parms = param, func = dynamis, method = "euler")
+
+plot(out, out2, out3, lty = 1, main = "mRNA transcripts over time", xlab = "time in meters")
+legend("bottomright", lty = 1, col = 1:3, legend = c("stable", "upwards", "downwards"))
+```
