@@ -1,0 +1,19 @@
+---
+title: "exorcism2"
+author: "Eline Smit"
+date: "5/11/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(deSolve)
+state <- c(rm0 = 4.74, r0 = 267, dr = 0, drn = 0)
+timeframe = seq(0, 48, by = 1)
+parmezaansekaas = c(ksrm = 2.90, ic50rm = 26.2, kon = 0.00329, kt = 0.63, kre = 0.57, Rf = 0.49, kdr = 0.0572, kdrm = 0.612, ksr = 3.22, D = )
+
+
+```
