@@ -9,14 +9,30 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Glucocorticoids are things, they do a thing that helps with things. They are often usen in asthma treatments as an anti-inflammatory drug
+Glucocorticoids are often usen in asthma treatments as an anti-inflammatory drug
+
+De toevoeging van MPL verlaagt de dichtheid van vrije receptors, en verhoogt de dichtheid van MPL-receptor complex. Door de verhoging van de dichtheid van MPL-receptor complex stijgt het niveau van MPL-receptor complexen, door deze verhoging komt $(1-\frac{DR(N)}{Ic_{50\_Rm}DR(N)})$ in de formule voor de hoeveelheid receptor mRNA dichter bij 0, hierdoor verlaagt de hoeveelheid receptor mRNA, wat dus de productie voor de receptor verlaagt.
 
 ```{r}
 library(deSolve)
 
-state <- c(rm0 = 4.74, r0 = 267, dr = 0, drn = 0)
+state <- c(rm0 = 4.74, 
+           r0 = 267, 
+           dr = 0, 
+           drn = 0)
+
 timeframe = seq(0, 48, by = 1)
-parmezan = c(ksrm = 2.90, ic50rm = 26.2, kon = 0.00329, kt = 0.63, kre = 0.57, Rf = 0.49, kdr = 0.0572, kdrm = 0.612, ksr = 3.22, D = 20*1000*(1/374.5))
+
+parmezan = c(ksrm = 2.90, 
+            ic50rm = 26.2, 
+            kon = 0.00329, 
+            kt = 0.63, 
+            kre = 0.57, 
+            Rf = 0.49, 
+            kdr = 0.0572, 
+            kdrm = 0.612, 
+            ksr = 3.22, 
+            D = 20*1000*(1/374.5))
 
 formulas <- function(t, y, parameters){
   with(as.list(c(y, parameters)), {
@@ -33,3 +49,4 @@ out  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, m
 plot(out)
 ```
 
+Initieel volgen de grafieken het verloop wat eerder is beschreven, maar door de afname van het mRNA, verlagen na die eerste piek alle andere hoeveelheden, terwijl de hoeveelheid mRNA weer langzaam toeneemt, tot de stoffen een evenwicht bereiken. 
