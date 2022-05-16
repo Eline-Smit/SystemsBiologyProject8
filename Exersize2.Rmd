@@ -32,21 +32,24 @@ parmezan = c(ksrm = 2.90,
             kdr = 0.0572, 
             kdrm = 0.612, 
             ksr = 3.22, 
-            D = 20*1000*(1/374.5))
+            D = 20 * 1000 * (1 / 374.5))
 
 formulas <- function(t, y, parameters){
   with(as.list(c(y, parameters)), {
-    dmRNAr <- ksrm*(1-(drn)/(ic50rm+drn))-kdrm*rm0
-    dR <- ksr*rm0+Rf*kre*drn-kon*D*r0-kdr*r0
-    dDR <-kon*D*r0-kt*dr
-    dDRN <- kt*dr-kre*drn
+    dmRNAr <- ksrm * (1 - (drn) / (ic50rm + drn)) - kdrm * rm0
+    dR <- ksr * rm0 + Rf * kre * drn - kon * D * r0 - kdr * r0
+    dDR <-kon * D * r0 - kt * dr
+    dDRN <- kt * dr - kre * drn
     
     return(list(c(dmRNAr, dR, dDR, dDRN)))
     }
   )
 }
+
+
 out  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
-plot(out)
+
+plot(out, lty = 1, main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), xlab = "Time in hours", ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
 ```
 
 Initieel volgen de grafieken het verloop wat eerder is beschreven, maar door de afname van het mRNA, verlagen na die eerste piek alle andere hoeveelheden, terwijl de hoeveelheid mRNA weer langzaam toeneemt, tot de stoffen een evenwicht bereiken. 

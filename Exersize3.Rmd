@@ -1,0 +1,74 @@
+---
+title: "Week Three"
+author: "Eline Smit"
+date: "5/16/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this case we use the median, as using the mean will cause outliers to influence the data more easily. Using the median
+
+```{r}
+library(deSolve)
+
+setwd("/homes/kbsmit/Documents/project8/SystemsBiologyProject8/Data/")
+expdata = read.csv("MPL.csv")
+
+medians <- aggregate(expdata[,c("MPL_conc","mRNA","Free_receptor")],list(expdata$dose,expdata$time), median, na.rm=T)
+names(medians)[1:2] <- c("dose","time")
+
+#set the initial states, timeframe, and parameters, and create a function for the formulas
+state <- c(rm0 = 4.74, 
+           r0 = 267, 
+           dr = 0, 
+           drn = 0)
+
+timeframe <- seq(0, 168, by = 1)
+
+parmezan <- c(ksrm = 2.90, 
+            ic50rm = 26.2, 
+            kon = 0.00329, 
+            kt = 0.63, 
+            kre = 0.57, 
+            Rf = 0.49, 
+            kdr = 0.0572, 
+            kdrm = 0.612, 
+            ksr = 3.22, 
+            D = 39)
+
+formulas <- function(t, y, parameters){
+  with(as.list(c(y, parameters)), {
+    dmRNAr <- ksrm*(1-(drn)/(ic50rm+drn))-kdrm*rm0
+    dR <- ksr*rm0+Rf*kre*drn-kon*D*r0-kdr*r0
+    dDR <-kon*D*r0-kt*dr
+    dDRN <- kt*dr-kre*drn
+    
+    return(list(c(dmRNAr, dR, dDR, dDRN)))
+    }
+  )
+}
+
+# generate output from using all the data given, then adjust D for the 2nd concentration and generate another output
+out  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+
+parmezan["D"] <- 107
+
+out2  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+
+# Plot the graphs for mRNA with the first concentration first
+par(yaxs = "i", xaxs = "i")
+plot(out[,c("time", "rm0")], type="l", xlab = "Time in hours", ylab = "fmol/g", main = "mRNA concentration w/ dose = 0.1", xlim = c(0, 170), ylim = c(0,5))
+lines(medians[medians$dose == 0.1, c("time", "mRNA")], col=2)
+lines(expdata[expdata$dose == 0.1, c("time", "mRNA")], col=2, type = "p")
+
+# Plot the graphs for mRNA with the second concentration
+par(yaxs = "i", xaxs = "i")
+plot(out2[,c("time", "rm0")], type="l", xlab = "Time in hours", ylab = "fmol/g", main = "mRNA concentration w/ dose = 0.3", xlim = c(0, 170), ylim = c(0,5))
+lines(medians[medians$dose == 0.3, c("time", "mRNA")], col=2)
+lines(expdata[expdata$dose == 0.3, c("time", "mRNA")], col=2, type = "p")
+
+```
+
