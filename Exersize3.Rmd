@@ -60,24 +60,47 @@ out2  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, 
 
 # Plot the graphs for mRNA with the first concentration first
 par(yaxs = "i", xaxs = "i")
-plot(out[,c("time", "rm0")], type="l", xlab = "Time in hours", ylab = "fmol/g", main = "mRNA concentration w/ dose = 0.1", xlim = c(0, 170), ylim = c(0,5))
+plot(out[,c("time", "rm0")], 
+     type="l", xlab = "Time in hours", 
+     ylab = "fmol/g", 
+     main = "mRNA concentration w/ dose = 0.1", 
+     xlim = c(0, 170), 
+     ylim = c(0,5))
 lines(medians[medians$dose == 0.1, c("time", "mRNA")], col=2)
 lines(expdata[expdata$dose == 0.1, c("time", "mRNA")], col=2, type = "p")
 
 # Plot the graphs for mRNA with the second concentration
 par(yaxs = "i", xaxs = "i")
-plot(out2[,c("time", "rm0")], type="l", xlab = "Time in hours", ylab = "fmol/g", main = "mRNA concentration w/ dose = 0.3", xlim = c(0, 170), ylim = c(0,5))
+plot(out2[,c("time", "rm0")], 
+     type="l", 
+     xlab = "Time in hours", 
+     ylab = "fmol/g", 
+     main = "mRNA concentration w/ dose = 0.3", 
+     xlim = c(0, 170), 
+     ylim = c(0,5))
 lines(medians[medians$dose == 0.3, c("time", "mRNA")], col=2)
 lines(expdata[expdata$dose == 0.3, c("time", "mRNA")], col=2, type = "p")
 
 # Now do the same for the receptor concentrations
 par(yaxs = "i", xaxs = "i")
-plot(out[,c("time", "r0")], type="l", xlab = "Time in hours", ylab = "fmol/mg", main = "Receptor concentration w/ dose = 0.1", xlim = c(0, 170), ylim = c(0,500))
+plot(out[,c("time", "r0")], 
+     type="l", 
+     xlab = "Time in hours", 
+     ylab = "fmol/mg", 
+     main = "Receptor concentration w/ dose = 0.1", 
+     xlim = c(0, 170), 
+     ylim = c(0,500))
 lines(medians[medians$dose == 0.1, c("time", "Free_receptor")], col=2)
 lines(expdata[expdata$dose == 0.1, c("time", "Free_receptor")], col=2, type = "p")
 
 par(yaxs = "i", xaxs = "i")
-plot(out2[,c("time", "r0")], type="l", xlab = "Time in hours", ylab = "fmol/mg", main = "Receptor concentration w/ dose = 0.3", xlim = c(0, 170), ylim = c(0,500))
+plot(out2[,c("time", "r0")], 
+     type="l", 
+     xlab = "Time in hours", 
+     ylab = "fmol/mg", 
+     main = "Receptor concentration w/ dose = 0.3", 
+     xlim = c(0, 170), 
+     ylim = c(0,500))
 lines(medians[medians$dose == 0.3, c("time", "Free_receptor")], col=2)
 lines(expdata[expdata$dose == 0.3, c("time", "Free_receptor")], col=2, type = "p")
 
@@ -91,8 +114,11 @@ The simulation from the model does not seem to match the experimental data very 
 [1] To remove the effect from the medicine on the rate of synthesis of mRNA, the formula $k_{s\_rm}\cdot(1-\frac{DR(N)}{IC_{50\_Rm}+DR(N)})-k_{d\_Rm}\cdot mRN\kern-0.17emA_r$ needs to be changed to only $k_{s\_rm}-k_{d\_Rm}\cdot mRN\kern-0.17emA_r$.
 
 ```{r}
-parmezan["D"] <- 120*1000/374.471
+#Set D back to the base we use for the remaining exercises and set a timeframe
+parmezan["D"] <- 20*1000/374.471
+timeframe <- seq(0, 48, by = 1)
 
+#Create a function for the edited formulas
 edited_formulas_one <- function(t, y, parameters){
   with(as.list(c(y, parameters)), {
     dmRNAr <- ksrm - kdrm * rm0
@@ -104,11 +130,123 @@ edited_formulas_one <- function(t, y, parameters){
     }
   )
 }
-out  <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
-plot(out, lty = 1, main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), xlab = "Time in hours", ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
+
+#Plot the new graphs with the edited formula
+out_syntheffect  <- ode(times = timeframe, y = state,   parms = parmezan, func = edited_formulas_one, method = "euler")
+plot(out_syntheffect, 
+     lty = 1, 
+     main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), 
+     xlab = "Time in hours", 
+     ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
+
+```
+[2]
+```{r}
+# Set a timeframe for this exercise
+timeframe <- seq(0, 96, by = 1)
+
+# Make an edited formula function where D is set to 0 at a point where the model is in a steady state
+formula_stopmed <- function(t, y, parameters){
+  if(t>45){
+    parameters["D"]=0
+  }
+  with(as.list(c(y, parameters)), {
+    dmRNAr <- ksrm * (1 - (drn) / (ic50rm + drn)) - kdrm * rm0
+    dR <- ksr * rm0 + Rf * kre * drn - kon * D * r0 - kdr * r0
+    dDR <-kon * D * r0 - kt * dr
+    dDRN <- kt * dr - kre * drn
+    
+    return(list(c(dmRNAr, dR, dDR, dDRN)))
+    }
+  )
+}
+out_stopmed  <- ode(times = timeframe, y = state,   parms = parmezan, func = formula_stopmed, method = "euler")
+plot(out_stopmed, 
+     lty = 1, 
+     main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), 
+     xlab = "Time in hours", 
+     ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
+```
+after stopping the treatment with the medicine, following the model, the numbers seem to go back to the initial levels. the receptor concentration taking the longest time to get back to base levels
+
+[3]
+```{r}
+timeframe <- seq(0, 72, by = 1)
+parmezan["D"] <- 20*1000/374.471
+kon = c(0.00329/5, 0.00329/2, 0.00329*2, 0.00329*5)
+kre = c(0.57/5, 0.57/2, 0.57*2, 0.57*5)
+
+#out_base <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+
+for(x in kon){
+  parmezan["kon"] <- x
+  out_kon <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+  plot(out_kon, 
+       lty = 1, 
+       main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), 
+       xlab = "Time in hours", 
+       ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
+}
+parmezan["kon"] <- 0.00329
+
+for(x in kre){
+  parmezan["kre"] <- x
+  out_kre <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+  plot(out_kre, 
+       lty = 1, 
+       main = c("mRNA concentration", "Receptor concentration", "Receptor complex concentration", "Receptor complex conc. in nucleus"), 
+       xlab = "Time in hours", 
+       ylab = c("fmol/g", "fmol/mg", "fmol/mg", "fmol/mg"))
+}
+parmezan["kre"] <- 0.57
 
 ```
 
+[4]
+$k_{s\_r}$ has to be set to 0 to simulate this change.
+```{r}
+
+out_withksr <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+parmezan["ksr"] <- 0
+out_noksr <- ode(times = timeframe, y = state,   parms = parmezan, func = formulas, method = "euler")
+
+par(mfrow=c(2,2))
+plot(out_noksr[,c("time", "rm0")], 
+     type = "l", 
+     lty = 1, 
+     main = "mRNA concentration", 
+     xlab = "Time in hours", 
+     ylab = "fmol/g")
+lines(out_withksr[,c("time", "rm0")], col=2)
+
+plot(out_noksr[,c("time", "r0")], 
+     type = "l", 
+     lty = 1, 
+     main = "Receptor concentration", 
+     xlab = "Time in hours", 
+     ylab = "fmol/mg")
+lines(out_withksr[,c("time", "r0")], col=2)
+
+plot(out_noksr[,c("time", "dr")], 
+     type = "l", 
+     lty = 1, 
+     main = "Receptor complex concentration", 
+     xlab = "Time in hours", 
+     ylab = "fmol/mg")
+lines(out_withksr[,c("time", "dr")], col=2)
+
+plot(out_noksr[,c("time", "drn")], 
+     type = "l", 
+     lty = 1, 
+     main = "Receptor complex conc. in nucleus", 
+     xlab = "Time in hours", 
+     ylab = "fmol/mg")
+lines(out_withksr[,c("time", "drn")], col=2)
+```
+The red lines in these graphs are the original lines, where the receptor synthesis is still active.
+Without receptor synthesis, all concentrations return to their original values except the receptor concentration, which will reach 0 and stay there. It also takes longer for it to return to a steady state.
+
+[5]
 
 \newpage
 # Appendix: All code for this report
